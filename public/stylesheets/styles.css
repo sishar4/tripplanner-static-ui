@@ -1,0 +1,19 @@
+.title {
+  border: solid 1px #ccc;
+  border-radius: 5px;
+  padding: 3px; }
+
+.panel-body li {
+  display: inline;
+  float: left;
+  padding: 10px; }
+
+.day-of-trip {
+  margin: auto;
+  width: 30%; }
+  .day-of-trip h4 {
+    float: left;
+    margin-right: 20px; }
+  .day-of-trip .panel-body {
+    display: inline;
+    width: 100%; }

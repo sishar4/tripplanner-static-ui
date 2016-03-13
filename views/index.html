@@ -1,0 +1,176 @@
+{% extends 'layout.html' %}
+{% block content %}
+
+<div class='row'>
+  <div class='col-md-8'>
+    <div id='map-canvas' style='height:500px' style='border:solid 1px black'></div>
+  </div>
+  <div class='col-md-4'>
+    {% include 'selectors.html' %}
+    {% include 'trip.html' %}
+
+  </div>
+</div>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAkarjA8hlysMC5aK7ywsrUwYY6UwpnXG0&sensor=true"></script>
+<script>
+function initialize_gmaps() {
+    // initialize new google maps LatLng object
+    var myLatlng = new google.maps.LatLng(40.705189,-74.009209);
+    // set the map options hash
+    var mapOptions = {
+        center: myLatlng,
+        zoom: 15,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    // get the maps div's HTML obj
+    var map_canvas_obj = document.getElementById("map-canvas");
+    console.log(map_canvas_obj);
+    // initialize a new Google Map with the options
+    window.map = new google.maps.Map(map_canvas_obj, mapOptions);
+}
+
+$(document).ready(function() {
+    initialize_gmaps();
+});
+</script>
+
+<script>
+  {% autoescape false %}
+  // note to instructors: next iteration, change `all_xyz` to `templateXyz`
+  var hotels = {{ hotels | json }};
+  var restaurants = {{ restaurants | json }};
+  var activities = {{ activities | json }};
+  var markers = [];
+  {% endautoescape %}
+
+  $(document).ready(function() {
+        $('button.btn.btn-sm.btn-primary').on('click', function(e) {
+            e.preventDefault();
+            var btn = $(this);
+            var selector = btn.parent().prev().children();
+            var option = $('#' + selector.attr('id') + ' option:selected');
+            console.log(option.text());
+            //Add element to itinerary
+            var item = $('<li class=' + option.val() +'>' + option.text() + '</li>');
+            console.log(option.val());
+            var deleteButton = $('<button class="btn btn-danger remove_fields">x</button>');
+            var listGroup = $('.' + selector.attr('id'));
+            item.append(deleteButton);
+            listGroup.append(item);
+
+            var lat, lng;
+            if (selector.attr('id') === 'HotelsChooser') {
+                hotels.forEach(function(hotel) {
+                    if (hotel.name === option.text()) {
+                        lat = hotel.place.location[0];
+                        lng = hotel.place.location[1];
+                    }
+                });
+            } else if (selector.attr('id') === 'RestaurantsChooser') {
+                restaurants.forEach(function(restaurant) {
+                    if (restaurant.name === option.text()) {
+                        lat = restaurant.place.location[0];
+                        lng = restaurant.place.location[1];
+                    }
+                });
+            } else {
+                activities.forEach(function(activity) {
+                    if (activity.name === option.text()) {
+                        lat = activity.place.location[0];
+                        lng = activity.place.location[1];
+                    }
+                });
+            }
+            
+            
+            console.log(lat + ', ' + lng);
+            //Create marker for map
+            var myLatLng = new google.maps.LatLng(lat, lng);
+            var marker = new google.maps.Marker({
+                position: myLatLng,
+                map: window.map,
+                title: option.text()
+            });
+            markers.push(marker);
+
+            window.map.setCenter({
+                lat : lat,
+                lng : lng
+            });
+        });
+
+        $('#itinerary').on('click', 'button.btn.btn-danger.remove_fields', function(e){ 
+            e.preventDefault();
+            var btn = $(this);
+            var listItem = btn.parent();
+            var label = listItem.parent().parent().parent().prev();
+            listItem.remove();
+
+            var searchStr = listItem.text().substring(0, listItem.text().length-1);
+            console.log(searchStr);
+
+            //Remove marker from map
+            markers.forEach(function(marker) {
+                if (marker.title === searchStr) {
+                    marker.setMap(null);
+                }
+            });
+        });
+
+        //Get Add Day click event
+        $('a.btn.btn-sm.btn-success').on('click', function(e) {
+            e.preventDefault();
+            var btn = $(this);
+            var prevBtn = btn.parent().prev(); //Used to determine what day number is being added
+            var list = btn.parent().parent();
+
+            //Add new Day button to DOM
+            var nextDay = parseInt(prevBtn.text()) + 1
+            var itemToInsert = $('<li><a class="btn btn-sm btn-default">' + nextDay + '</a></li>');
+            btn.parent().before(itemToInsert);
+
+            //Insert new Day into Days list
+        });
+
+        //Get Day button click event
+        $('ul.nav.nav-pills').on('click', 'a.btn.btn-sm.btn-default', function(e) {
+            e.preventDefault();
+            var btn = $(this);
+            
+            //Capture itinerary and save to array or Save data to local Models
+            //Switch to new Day in Days list
+                //Update DOM elements (day label, itinerary)
+        }); 
+            
+
+        //Get Delete Day click event
+        $('#remove-day').on('click', function(e) {
+            e.preventDefault();
+
+            var dayButtons = $("ul.nav.nav-pills").children();
+            if (dayButtons.length > 2) {
+                var btn = $(this);
+                var dayLabel = btn.prev();
+                var dayNum = parseInt(dayLabel.text().substring(dayLabel.text().length-1, dayLabel.text().length));
+
+                //Remove Day button from DOM
+                var dayToRemove = $(dayButtons[dayNum-1]);
+                dayToRemove.remove();
+
+                dayButtons = $("ul.nav.nav-pills").children();
+                if (dayNum < dayButtons.length) {
+                    for (var i = 0; i < dayButtons.length-1; i++) {
+                        var currBtn = $(dayButtons[i]);
+                        console.log(i+1);
+                        currBtn.html('<a class="btn btn-sm btn-default">' + (i+1) + '</a>');
+                    }
+                }
+                //Remove Day from array or remove its data from local Models
+            }
+        });
+            
+
+    });
+</script>
+
+{% endblock %}
